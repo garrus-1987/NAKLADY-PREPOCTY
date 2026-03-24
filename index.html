@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nákladová kalkulačka v3</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Barlow:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg:     #0d0e10;
+  --s1:     #151719;
+  --s2:     #1c1e21;
+  --s3:     #232629;
+  --s4:     #2a2d31;
+  --border: #2f3237;
+  --border2:#3a3e44;
+  --c1: #6ee89a;   /* študent OOP */
+  --c2: #f0c040;   /* študent bez OOP */
+  --c3: #ff7f50;   /* DoPČ */
+  --c4: #4db8ff;   /* fakturant brigádnik */
+  --c5: #b57aff;   /* fakturant dodávateľ */
+  --acc:#6ee89a;
+  --text:#eaecef;
+  --muted:#72787f;
+  --muted2:#454a51;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;}
+
+/* ── TABS ── */
+.app-header{
+  display:flex;align-items:center;gap:0;
+  border-bottom:1px solid var(--border);
+  background:var(--s1);
+  padding:0 24px;
+  position:sticky;top:0;z-index:100;
+}
+.app-logo{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--acc);
+  letter-spacing:.12em;text-transform:uppercase;padding:14px 20px 14px 0;
+  border-right:1px solid var(--border);margin-right:4px;white-space:nowrap;
+}
+.tab{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);padding:16px 18px;cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .18s;white-space:nowrap;
+  user-select:none;
+}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--acc);border-bottom-color:var(--acc);}
+.app-ver{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted2);padding:14px 0;}
+.header-actions{margin-left:auto;display:flex;align-items:center;gap:6px;padding:0 0 0 12px;}
+.hbtn{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;
+  padding:6px 12px;border-radius:6px;cursor:pointer;transition:all .18s;
+  white-space:nowrap;border:1px solid var(--border);background:transparent;color:var(--muted);
+}
+.hbtn:hover{color:var(--text);border-color:var(--border2);}
+.hbtn.primary{background:rgba(110,232,154,.1);border-color:rgba(110,232,154,.3);color:var(--acc);}
+.hbtn.primary:hover{background:rgba(110,232,154,.18);}
+.hbtn.danger:hover{color:#ff6b6b;border-color:rgba(255,107,107,.3);}
+.save-indicator{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted2);display:flex;align-items:center;gap:5px;padding:0 4px;}
+.save-dot{width:6px;height:6px;border-radius:50%;background:var(--muted2);transition:background .4s;}
+.save-dot.saved{background:var(--acc);}
+.save-dot.saving{background:var(--c2);}
+
+/* ── PANELS ── */
+.panel{display:none;padding:28px 24px 80px;max-width:960px;margin:0 auto;}
+.panel.active{display:block;}
+
+/* ── SECTION ── */
+.sec{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted);margin:28px 0 12px;
+  display:flex;align-items:center;gap:10px;}
+.sec::after{content:'';flex:1;height:1px;background:var(--border);}
+.sec:first-child{margin-top:0;}
+
+/* ── CARDS / GRID ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.grid-fill{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:10px;}
+@media(max-width:600px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+.card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px;}
+.card-title{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+
+/* ── FIELDS ── */
+.field{margin-bottom:10px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:5px;}
+.input-row{display:flex;align-items:center;gap:6px;}
+.ni{flex:1;background:var(--s3);border:1px solid var(--border);border-radius:6px;
+  color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;
+  padding:6px 10px;text-align:right;outline:none;transition:border-color .2s;min-width:0;}
+.ni:focus{border-color:var(--border2);}
+.ni.left{text-align:left;}
+.unit{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);white-space:nowrap;}
+.odvody-note{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted2);
+  margin-top:8px;padding-top:8px;border-top:1px solid var(--border);line-height:1.7;}
+.odvody-note span{color:var(--muted);}
+
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.badge{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 7px;border-radius:20px;font-weight:600;}
+
+/* ── PROJECT INFO ── */
+.proj-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:4px;}
+.proj-field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:160px;}
+.proj-field label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);}
+.proj-field input{background:var(--s2);border:1px solid var(--border);border-radius:7px;
+  color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;font-weight:600;
+  padding:8px 12px;outline:none;transition:border-color .2s;}
+.proj-field input:focus{border-color:var(--border2);}
+
+/* ── HARMONOGRAM ── */
+.add-day-btn{
+  display:flex;align-items:center;gap:8px;
+  background:transparent;border:1px dashed var(--border2);border-radius:8px;
+  color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:11px;
+  padding:10px 16px;cursor:pointer;transition:all .18s;width:100%;margin-bottom:16px;
+}
+.add-day-btn:hover{border-color:var(--acc);color:var(--acc);}
+
+.day-block{
+  background:var(--s1);border:1px solid var(--border);border-radius:10px;
+  margin-bottom:12px;overflow:hidden;
+}
+.day-header{
+  display:flex;align-items:center;gap:10px;padding:12px 16px;
+  background:var(--s2);border-bottom:1px solid var(--border);cursor:pointer;
+  user-select:none;
+}
+.day-num{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2);min-width:36px;}
+.day-date-input{
+  background:var(--s3);border:1px solid var(--border);border-radius:6px;
+  color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;
+  padding:4px 8px;outline:none;width:130px;
+}
+.day-date-input:focus{border-color:var(--border2);}
+.day-label{font-size:13px;font-weight:700;flex:1;}
+.day-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 8px;border-radius:12px;}
+.day-badge.vikend{background:rgba(240,192,64,.12);color:var(--c2);}
+.day-badge.sviatok{background:rgba(255,127,80,.15);color:var(--c3);}
+.day-badge.tyzden{background:rgba(110,232,154,.08);color:var(--muted);}
+.day-summary{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-left:auto;}
+.day-del{background:none;border:none;color:var(--muted2);cursor:pointer;font-size:14px;padding:2px 4px;
+  border-radius:4px;transition:color .15s;}
+.day-del:hover{color:#ff6b6b;}
+
+.day-body{padding:14px 16px;}
+
+/* zmeny */
+.zmena-block{
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:12px 14px;margin-bottom:10px;
+}
+.zmena-block:last-of-type{margin-bottom:8px;}
+.zmena-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.zmena-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.1em;min-width:60px;}
+.time-input{
+  background:var(--s3);border:1px solid var(--border);border-radius:6px;
+  color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;
+  padding:5px 8px;outline:none;width:76px;text-align:center;
+}
+.time-input:focus{border-color:var(--border2);}
+.time-sep{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted2);}
+.zmena-info{font-family:'IBM Plex Mono',monospace;font-size:10px;margin-left:4px;}
+.zmena-del{background:none;border:none;color:var(--muted2);cursor:pointer;font-size:13px;
+  margin-left:auto;padding:2px 4px;border-radius:4px;transition:color .15s;}
+.zmena-del:hover{color:#ff6b6b;}
+
+/* počty brigádnikov v zmene */
+.zmena-counts{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;}
+.count-field{display:flex;flex-direction:column;gap:4px;}
+.count-field label{font-family:'IBM Plex Mono',monospace;font-size:9px;
+  display:flex;align-items:center;gap:5px;}
+.count-input{
+  background:var(--s3);border:1px solid var(--border);border-radius:5px;
+  color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;
+  padding:5px 8px;outline:none;width:100%;text-align:center;
+}
+.count-input:focus{border-color:var(--border2);}
+
+.add-zmena-btn{
+  background:none;border:1px dashed var(--border);border-radius:6px;
+  color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:10px;
+  padding:6px 12px;cursor:pointer;transition:all .15s;width:100%;margin-top:2px;
+}
+.add-zmena-btn:hover{border-color:var(--acc);color:var(--acc);}
+
+/* ── RESULTS PANEL ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+@media(max-width:580px){.kpi-grid{grid-template-columns:1fr;}}
+.kpi{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:18px;}
+.kpi-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);
+  letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
+.kpi-val{font-size:30px;font-weight:800;letter-spacing:-.5px;line-height:1;}
+.kpi-sub{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted2);margin-top:4px;}
+
+/* results table */
+.rtable{background:var(--s1);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.rth{display:grid;grid-template-columns:1.6fr .8fr .8fr .7fr .7fr .9fr;gap:6px;
+  padding:9px 16px;border-bottom:1px solid var(--border);
+  font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted2);}
+.rtr{display:grid;grid-template-columns:1.6fr .8fr .8fr .7fr .7fr .9fr;gap:6px;
+  padding:9px 16px;border-bottom:1px solid #1a1c1f;align-items:center;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;transition:background .12s;}
+.rtr:hover{background:var(--s2);}
+.rtr:last-child{border-bottom:none;}
+.rtr-day{grid-column:1/-1;padding:7px 16px;
+  background:rgba(255,255,255,.02);border-top:1px solid var(--border);
+  font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);
+  letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+.rtotal{display:grid;grid-template-columns:1.6fr .8fr .8fr .7fr .7fr .9fr;gap:6px;
+  padding:12px 16px;background:rgba(110,232,154,.04);border-top:1px solid var(--border);
+  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;align-items:center;}
+.r-right{text-align:right;}
+.r-muted{color:var(--muted);}
+
+/* export btn */
+.export-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--s2);border:1px solid var(--border);border-radius:7px;
+  color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:10px;
+  padding:8px 14px;cursor:pointer;transition:all .18s;margin-top:14px;
+}
+.export-btn:hover{border-color:var(--acc);color:var(--acc);}
+
+.notebox{
+  background:rgba(110,232,154,.04);border:1px solid rgba(110,232,154,.12);
+  border-radius:8px;padding:12px 16px;font-family:'IBM Plex Mono',monospace;
+  font-size:10px;color:var(--muted);line-height:1.8;margin-top:14px;
+}
+.notebox .hi{color:var(--acc);}
+.warn{background:rgba(240,192,64,.06);border:1px solid rgba(240,192,64,.2);
+  border-radius:8px;padding:10px 14px;font-family:'IBM Plex Mono',monospace;
+  font-size:10px;color:var(--c2);margin-bottom:14px;display:none;}
+
+/* empty state */
+.empty{text-align:center;padding:60px 20px;font-family:'IBM Plex Mono',monospace;
+  font-size:11px;color:var(--muted2);}
+.empty span{display:block;font-size:28px;margin-bottom:12px;opacity:.3;}
+
+/* toast */
+#toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--s3);border:1px solid var(--acc);border-radius:8px;
+  padding:10px 18px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--acc);
+  opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;z-index:999;
+}
+#toast.show{opacity:1;transform:translateY(0);}
+
+/* color classes */
+.c1{color:var(--c1);} .c2{color:var(--c2);} .c3{color:var(--c3);} .c4{color:var(--c4);} .c5{color:var(--c5);}
+.bg1{background:rgba(110,232,154,.12);color:var(--c1);}
+.bg2{background:rgba(240,192,64,.12);color:var(--c2);}
+.bg3{background:rgba(255,127,80,.12);color:var(--c3);}
+.bg4{background:rgba(77,184,255,.12);color:var(--c4);}
+.bg5{background:rgba(181,122,255,.12);color:var(--c5);}
+
+.row-tag{display:inline-block;font-size:9px;padding:1px 6px;border-radius:12px;font-weight:600;margin-right:4px;}
+
+/* ── PASSWORD SCREEN ── */
+#pwScreen{
+  position:fixed;inset:0;background:var(--bg);z-index:9999;
+  display:flex;align-items:center;justify-content:center;
+}
+.pw-box{
+  background:var(--s1);border:1px solid var(--border);border-radius:14px;
+  padding:40px 44px;text-align:center;width:320px;
+}
+.pw-logo{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--acc);
+  letter-spacing:.14em;text-transform:uppercase;margin-bottom:24px;}
+.pw-title{font-size:20px;font-weight:800;margin-bottom:6px;}
+.pw-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:28px;}
+.pw-input{
+  width:100%;background:var(--s3);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;
+  padding:10px 14px;text-align:center;outline:none;letter-spacing:.15em;
+  transition:border-color .2s;margin-bottom:12px;
+}
+.pw-input:focus{border-color:var(--border2);}
+.pw-input.error{border-color:#ff6b6b;animation:shake .3s;}
+.pw-btn{
+  width:100%;background:rgba(110,232,154,.12);border:1px solid rgba(110,232,154,.3);
+  border-radius:8px;color:var(--acc);font-family:'IBM Plex Mono',monospace;
+  font-size:12px;font-weight:600;padding:10px;cursor:pointer;
+  transition:background .18s;letter-spacing:.08em;
+}
+.pw-btn:hover{background:rgba(110,232,154,.2);}
+.pw-err{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#ff6b6b;
+  margin-top:10px;height:16px;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+</style>
+</head>
+<body>
+
+<!-- PASSWORD SCREEN -->
+<div id="pwScreen">
+  <div class="pw-box">
+    <div class="pw-logo">NK · SR 2026</div>
+    <div class="pw-title">Prístup chránený</div>
+    <div class="pw-sub">Zadajte heslo pre vstup do kalkulačky</div>
+    <input class="pw-input" type="password" id="pwInput" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')checkPw()">
+    <button class="pw-btn" onclick="checkPw()">Vstúpiť →</button>
+    <div class="pw-err" id="pwErr"></div>
+  </div>
+</div>
+<div class="app-header">
+  <div class="app-logo">NK · SR 2026</div>
+  <div class="tab active" data-tab="harmonogram">Harmonogram</div>
+  <div class="tab" data-tab="sadzby">Sadzby</div>
+  <div class="tab" data-tab="vysledky">Výsledky</div>
+  <div class="header-actions">
+    <div class="save-indicator">
+      <div class="save-dot" id="saveDot"></div>
+      <span id="saveLabel">—</span>
+    </div>
+    <button class="hbtn" onclick="saveToFile()" title="Uložiť projekt ako JSON súbor">⬇ Uložiť</button>
+    <button class="hbtn primary" onclick="document.getElementById('fileInput').click()" title="Načítať projekt zo súboru">⬆ Načítať</button>
+    <button class="hbtn danger" onclick="newProject()" title="Nový projekt">✕ Nový</button>
+    <input type="file" id="fileInput" accept=".json" style="display:none" onchange="loadFromFile(event)">
+    <div class="app-ver">v3.1</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     TAB: HARMONOGRAM
+════════════════════════════════════════ -->
+<div class="panel active" id="tab-harmonogram">
+
+  <!-- Projekt info -->
+  <div class="proj-row" style="margin-bottom:20px;">
+    <div class="proj-field">
+      <label>Názov projektu</label>
+      <input type="text" id="projName" placeholder="napr. Instore akcia XY" class="left">
+    </div>
+    <div class="proj-field" style="max-width:200px;">
+      <label>Klient</label>
+      <input type="text" id="projClient" placeholder="napr. ABC s.r.o." class="left">
+    </div>
+  </div>
+
+  <button class="add-day-btn" id="addDayBtn">
+    <span style="font-size:16px;">+</span> Pridať deň
+  </button>
+
+  <div id="daysList">
+    <div class="empty"><span>📅</span>Zatiaľ žiadne dni.<br>Kliknite „Pridať deň" a vytvorte harmonogram.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     TAB: SADZBY
+════════════════════════════════════════ -->
+<div class="panel" id="tab-sadzby">
+
+  <div class="sec">Hodinové sadzby brigádnikov (čistá odmena)</div>
+
+  <div class="grid-fill">
+
+    <!-- Študent OOP -->
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--c1)"></div><span class="c1">Študent s OOP</span><span class="badge bg1" style="margin-left:auto">DBPŠ</span></div>
+      <div class="field"><label>Týždeň (čistá)</label><div class="input-row"><input class="ni" type="number" id="s1w" value="6.50" step=".10" min="0"><span class="unit">€/hod</span></div></div>
+      <div class="field"><label>Víkend / sviatok</label><div class="input-row"><input class="ni" type="number" id="s1we" value="7.50" step=".10" min="0"><span class="unit">€/hod</span></div></div>
+      <div class="odvody-note">zamestnanec: <span>0 %</span><br>zamestnávateľ: <span>1,05 %</span><br>zdravotné: <span>0 %</span> (štát)</div>
+    </div>
+
+    <!-- Študent bez OOP -->
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--c2)"></div><span class="c2">Študent bez OOP</span><span class="badge bg2" style="margin-left:auto">DBPŠ</span></div>
+      <div class="field"><label>Týždeň (čistá)</label><div class="input-row"><input class="ni" type="number" id="s2w" value="6.50" step=".10" min="0"><span class="unit">€/hod</span></div></div>
+      <div class="field"><label>Víkend / sviatok</label><div class="input-row"><input class="ni" type="number" id="s2we" value="7.50" step=".10" min="0"><span class="unit">€/hod</span></div></div>
+      <div class="odvody-note">zamestnanec: <span>7 %</span><br>zamestnávateľ: <span>22,80 %</span><br>zdravotné: <span>0 %</span> (štát)</div>
+    </div>
+
+    <!-- DoPČ zamestnaný -->
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--c3)"></div><span class="c3">Zamestnaný (DoPČ)</span><span class="badge bg3" style="margin-left:auto">DoPČ</span></div>
+      <div class="field"><label>Týždeň (čistá)</label><div class="input-row"><input class="ni" type="number" id="s3w" value="6.50" step=".10" min="0"><span class="unit">€/hod</span></div></div>
+      <div class="field"><label>Víkend / sviatok</label><div class="input-row"><input class="ni" type="number" id="s3we" value="7.50" step=".10" min="0"><span class="unit">€/hod</span></div></div>
+      <div class="odvody-note">zamestnanec: <span>13,4 %</span><br>zamestnávateľ: <span>36,2 %</span></div>
+    </div>
+
+    <!-- DoPČ nezamestnaný -->
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--c3);opacity:.6"></div><span style="color:#e07a50">Nezamestnaný (DoPČ)</span><span class="badge bg3" style="margin-left:auto">DoPČ</span></div>
+      <div class="field"><label>Týždeň (čistá)</label><div class="input-row"><input class="ni" type="number" id="s4w" value="6.50" step=".10" min="0"><span class="unit">€/hod</span></div></div>
+      <div class="field"><label>Víkend / sviatok</label><div class="input-row"><input class="ni" type="number" id="s4we" value="7.50" step=".10" min="0"><span class="unit">€/hod</span></div></div>
+      <div class="odvody-note">zamestnanec: <span>13,4 %</span><br>zamestnávateľ: <span>36,2 %</span></div>
+    </div>
+
+    <!-- Fakturant brigádnik -->
+    <div class="card">
+      <div class="card-title"><div class="dot" style="background:var(--c4)"></div><span class="c4">Fakturant brigádnik</span><span class="badge bg4" style="margin-left:auto">SZČO</span></div>
+      <div class="field"><label>Fakturovaná sadzba</label><div class="input-row"><input class="ni" type="number" id="s5" value="8.00" step=".10" min="0"><span class="unit">€/hod</span></div></div>
+      <div style="height:36px"></div>
+      <div class="odvody-note">zamestnávateľ: <span>0 %</span><br>fixná sadzba (bez nočného bonusu)</div>
+    </div>
+
+    <!-- Fakturant dodávateľ -->
+    <div class="card" style="border-color:rgba(181,122,255,.2)">
+      <div class="card-title"><div class="dot" style="background:var(--c5)"></div><span class="c5">Fakturant dodávateľ</span><span class="badge bg5" style="margin-left:auto">SZČO</span></div>
+      <div class="field"><label>Fakturovaná sadzba</label><div class="input-row"><input class="ni" type="number" id="s6" value="12.00" step=".10" min="0"><span class="unit">€/hod</span></div></div>
+      <div style="height:36px"></div>
+      <div class="odvody-note">zamestnávateľ: <span>0 %</span><br>fixná sadzba (bez nočného bonusu)</div>
+    </div>
+
+  </div>
+
+  <div class="sec" style="margin-top:28px;">Príplatky</div>
+  <div class="card" style="max-width:400px;">
+    <div class="field"><label>Nočný príplatok (22:00–06:00) — pripočíta sa k sadzbe</label>
+      <div class="input-row"><input class="ni" type="number" id="sNight" value="1.00" step=".10" min="0" style="max-width:100px"><span class="unit">€/hod</span></div>
+    </div>
+  </div>
+
+  <div class="notebox" style="margin-top:20px;">
+    <span class="hi">Odvody 2026:</span><br>
+    <span class="hi">Študent OOP:</span> odmena ≤200€/mes → zamestnanec 0%, zamestnávateľ 1,05%. Zdravotné = 0 (štát).<br>
+    <span class="hi">Študent bez OOP:</span> zamestnanec 7% (dôchodkové), zamestnávateľ 22,80%. Zdravotné = 0.<br>
+    <span class="hi">DoPČ:</span> zamestnanec 13,4% (soc.9,4%+zdr.4%), zamestnávateľ 36,2% (soc.25,2%+zdr.11%). Čistá → hrubá → nákladová.<br>
+    <span class="hi">SZČO / Fakturanti:</span> odvody si platia sami. Fixná sadzba = priamy náklad.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     TAB: VÝSLEDKY
+════════════════════════════════════════ -->
+<div class="panel" id="tab-vysledky">
+  <div id="resultsContent">
+    <div class="empty"><span>📊</span>Pridajte dni a zmeny v záložke Harmonogram.<br>Výsledky sa zobrazia automaticky.</div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast">Skopírované do schránky ✓</div>
+
+<script>
+// ═══════════════════════════════════════════
+// HESLO — zmeňte na svoje
+// ═══════════════════════════════════════════
+const APP_PASSWORD = 'crewidebomby9';
+const PW_LS_KEY = 'nk_auth';
+
+function checkPw(){
+  const val = document.getElementById('pwInput').value;
+  const errEl = document.getElementById('pwErr');
+  const input = document.getElementById('pwInput');
+  if(val === APP_PASSWORD){
+    sessionStorage.setItem(PW_LS_KEY,'1');
+    const screen = document.getElementById('pwScreen');
+    screen.style.opacity='0';
+    screen.style.transition='opacity .3s';
+    setTimeout(()=>screen.remove(), 300);
+  } else {
+    errEl.textContent = 'Nesprávne heslo. Skúste znova.';
+    input.classList.add('error');
+    input.value='';
+    setTimeout(()=>{ input.classList.remove('error'); errEl.textContent=''; },1500);
+  }
+}
+
+// Ak je už overený v tejto session, skry screen hneď
+if(sessionStorage.getItem(PW_LS_KEY)==='1'){
+  document.getElementById('pwScreen').remove();
+}
+
+// Fokus na input
+document.getElementById('pwInput')?.focus();
+
+// ═══════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════
+const SK_HOLIDAYS = new Set([
+  '2026-01-01','2026-01-06','2026-04-03','2026-04-06',
+  '2026-05-01','2026-05-08','2026-07-05','2026-08-29',
+  '2026-09-01','2026-09-15','2026-11-01','2026-11-17',
+  '2026-12-24','2026-12-25','2026-12-26'
+]);
+
+const SK_DAYS = ['Ne','Po','Ut','St','Št','Pi','So'];
+const SK_DAYS_FULL = ['Nedeľa','Pondelok','Utorok','Streda','Štvrtok','Piatok','Sobota'];
+const MONTHS = ['jan','feb','mar','apr','máj','jún','júl','aug','sep','okt','nov','dec'];
+
+const TYPES = [
+  { key:'t1', label:'Študent OOP',      col:'c1', bg:'bg1', tag:'OOP',  odvZam:0.0,   odvZaml:0.0105, isDopC:false, isFakt:false },
+  { key:'t2', label:'Študent bez OOP',  col:'c2', bg:'bg2', tag:'DBPŠ', odvZam:0.07,  odvZaml:0.228,  isDopC:false, isFakt:false },
+  { key:'t3', label:'Zamestnaný DoPČ',  col:'c3', bg:'bg3', tag:'DoPČ', odvZam:0.134, odvZaml:0.362,  isDopC:true,  isFakt:false },
+  { key:'t4', label:'Nezamestnaný DoPČ',col:'c3', bg:'bg3', tag:'DoPČ', odvZam:0.134, odvZaml:0.362,  isDopC:true,  isFakt:false },
+  { key:'t5', label:'Fakt. brigádnik',  col:'c4', bg:'bg4', tag:'SZČO', odvZam:0.0,   odvZaml:0.0,    isDopC:false, isFakt:true  },
+  { key:'t6', label:'Fakt. dodávateľ',  col:'c5', bg:'bg5', tag:'SZČO', odvZam:0.0,   odvZaml:0.0,    isDopC:false, isFakt:true  },
+];
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let days = []; // [{id, date, zmeny:[{id,od,do,counts:{t1,t2,...t6}}]}]
+let dayCounter = 0;
+let zmenaCounter = 0;
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function nv(id){ return parseFloat(document.getElementById(id)?.value)||0; }
+
+function getDateInfo(dateStr){
+  if(!dateStr) return {label:'—', isWeekend:false, isHoliday:false, dayName:'', isSpecial:false};
+  const d = new Date(dateStr+'T00:00:00');
+  const dow = d.getDay(); // 0=Ne,6=So
+  const isWeekend = dow===0||dow===6;
+  const isHoliday = SK_HOLIDAYS.has(dateStr);
+  const day = d.getDate();
+  const mon = MONTHS[d.getMonth()];
+  const label = `${SK_DAYS[dow]} ${day}. ${mon}`;
+  return {label, isWeekend, isHoliday, isSpecial:isWeekend||isHoliday, dayName:SK_DAYS_FULL[dow]};
+}
+
+function parseTime(t){ // "08:00" → minutes
+  const [h,m]=(t||'00:00').split(':').map(Number);
+  return h*60+(m||0);
+}
+
+function calcHours(od, doo){
+  let s=parseTime(od), e=parseTime(doo);
+  if(e<=s) e+=24*60; // cez polnoc
+  return (e-s)/60;
+}
+
+function isNightShift(od, doo){
+  // ak akákoľvek časť je po 22:00 alebo pred 06:00
+  let s=parseTime(od), e=parseTime(doo);
+  if(e<=s) e+=24*60;
+  const night1s=22*60, night1e=24*60;
+  const night2s=0,     night2e=6*60;
+  // overlap s nočným oknom
+  const overlap1 = s<night1e && e>night1s;
+  const overlap2 = (s<night2e && e>night2s) || (s<(night2e+24*60) && e>(night2s+24*60));
+  return overlap1||overlap2;
+}
+
+function getSadzba(type, isSpecial, isNight){
+  const nightBonus = nv('sNight');
+  const rateKeys = ['s1w','s2w','s3w','s4w','s5','s6'];
+  const rateKeysWe = ['s1we','s2we','s3we','s4we','s5','s6'];
+  const i = TYPES.indexOf(type);
+  let base = isSpecial ? nv(rateKeysWe[i]) : nv(rateKeys[i]);
+  if(isNight && !type.isFakt) base += nightBonus;
+  return base;
+}
+
+function calcNakladova(cistaSadzba, type){
+  if(type.isFakt) return cistaSadzba;
+  if(type.odvZam>0){
+    const hruba = cistaSadzba/(1-type.odvZam);
+    return hruba*(1+type.odvZaml);
+  }
+  return cistaSadzba*(1+type.odvZaml);
+}
+
+function fmt(n,dec=2){ return n.toFixed(dec).replace('.',','); }
+
+// ═══════════════════════════════════════════
+// RENDER DAYS
+// ═══════════════════════════════════════════
+function makeCounts(){ return {t1:0,t2:0,t3:0,t4:0,t5:0,t6:0}; }
+
+function renderDays(){
+  const el = document.getElementById('daysList');
+  if(days.length===0){
+    el.innerHTML='<div class="empty"><span>📅</span>Zatiaľ žiadne dni.<br>Kliknite „Pridať deň" a vytvorte harmonogram.</div>';
+    renderResults();
+    autoSave();
+    return;
+  }
+  el.innerHTML = days.map((day,di)=>renderDay(day,di)).join('');
+  attachDayListeners();
+  renderResults();
+  autoSave();
+}
+
+function renderDay(day, di){
+  const di1 = di+1;
+  const info = getDateInfo(day.date);
+  const badgeCls = info.isHoliday?'sviatok':info.isWeekend?'vikend':'tyzden';
+  const badgeLbl = info.isHoliday?'Sviatok SR':info.isWeekend?'Víkend':'Pracovný deň';
+
+  // summary — celkový počet ľudí v dni
+  const totalPeople = day.zmeny.reduce((s,z)=>s+Object.values(z.counts).reduce((a,b)=>a+b,0),0);
+  const summaryStr = totalPeople>0 ? `${totalPeople} osôb · ${day.zmeny.length} zmena${day.zmeny.length>1?'y':''}` : '';
+
+  return `
+  <div class="day-block" id="day-${day.id}">
+    <div class="day-header">
+      <span class="day-num">D${di1}</span>
+      <input class="day-date-input" type="date" value="${day.date}" data-dayid="${day.id}"
+        onchange="updateDayDate('${day.id}',this.value)" onclick="event.stopPropagation()">
+      <span class="day-label">${info.label||'Vyberte dátum'}</span>
+      <span class="day-badge ${badgeCls}">${badgeLbl}</span>
+      <span class="day-summary">${summaryStr}</span>
+      <button class="day-del" onclick="deleteDay('${day.id}')" title="Odstrániť deň">✕</button>
+    </div>
+    <div class="day-body">
+      ${day.zmeny.map((z,zi)=>renderZmena(z,zi,day.id,info.isSpecial)).join('')}
+      <button class="add-zmena-btn" onclick="addZmena('${day.id}')">+ Pridať zmenu</button>
+    </div>
+  </div>`;
+}
+
+function renderZmena(z, zi, dayId, isSpecial){
+  const night = isNightShift(z.od, z.do);
+  const hours = calcHours(z.od, z.do);
+  const hoursLabel = hours>0 ? `${fmt(hours,1)} hod` : '';
+  const nightLabel = night ? ' · <span style="color:var(--c2)">🌙 Nočná</span>' : '';
+  const specialLabel = isSpecial ? ' · <span style="color:var(--c2)">Víkend/sviatok</span>' : '';
+  const zmenaLabel = zi===0 ? 'Zmena 1' : zi===1 ? 'Zmena 2' : `Zmena ${zi+1}`;
+
+  return `
+  <div class="zmena-block" id="zmena-${z.id}">
+    <div class="zmena-header">
+      <span class="zmena-label">${zmenaLabel}</span>
+      <input class="time-input" type="time" value="${z.od}" onchange="updateZmena('${dayId}','${z.id}','od',this.value)">
+      <span class="time-sep">→</span>
+      <input class="time-input" type="time" value="${z.do}" onchange="updateZmena('${dayId}','${z.id}','do',this.value)">
+      <span class="zmena-info r-muted">${hoursLabel}${nightLabel}${specialLabel}</span>
+      <button class="zmena-del" onclick="deleteZmena('${dayId}','${z.id}')">✕</button>
+    </div>
+    <div class="zmena-counts">
+      ${TYPES.map(t=>`
+        <div class="count-field">
+          <label><span class="dot" style="background:var(--${t.col.replace('c','c')});width:6px;height:6px;border-radius:50%;display:inline-block;"></span>
+            <span class="${t.col}">${t.label}</span></label>
+          <input class="count-input" type="number" min="0" step="1" value="${z.counts[t.key]||0}"
+            onchange="updateCount('${dayId}','${z.id}','${t.key}',this.value)">
+        </div>
+      `).join('')}
+    </div>
+  </div>`;
+}
+
+function attachDayListeners(){
+  // nothing extra needed — all via inline handlers
+}
+
+// ═══════════════════════════════════════════
+// MUTATIONS
+// ═══════════════════════════════════════════
+function addDay(){
+  // default date = last day + 1, or today
+  let dateStr = '';
+  if(days.length>0){
+    const last = days[days.length-1].date;
+    if(last){
+      const d = new Date(last+'T00:00:00');
+      d.setDate(d.getDate()+1);
+      dateStr = d.toISOString().slice(0,10);
+    }
+  } else {
+    dateStr = new Date().toISOString().slice(0,10);
+  }
+  const id = 'd'+(++dayCounter);
+  const zmenaId = 'z'+(++zmenaCounter);
+  days.push({
+    id, date:dateStr,
+    zmeny:[{id:zmenaId, od:'08:00', do:'20:00', counts:makeCounts()}]
+  });
+  renderDays();
+  // scroll to new day
+  setTimeout(()=>{
+    const el = document.getElementById('day-'+id);
+    if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
+  },50);
+}
+
+function deleteDay(dayId){
+  days = days.filter(d=>d.id!==dayId);
+  renderDays();
+}
+
+function updateDayDate(dayId, val){
+  const d = days.find(d=>d.id===dayId);
+  if(d){ d.date=val; renderDays(); }
+}
+
+function addZmena(dayId){
+  const d = days.find(d=>d.id===dayId);
+  if(!d) return;
+  const id = 'z'+(++zmenaCounter);
+  // default: nočná zmena po poslednej
+  const last = d.zmeny[d.zmeny.length-1];
+  d.zmeny.push({id, od:last?.do||'20:00', do:'08:00', counts:makeCounts()});
+  renderDays();
+}
+
+function deleteZmena(dayId, zmenaId){
+  const d = days.find(d=>d.id===dayId);
+  if(!d) return;
+  if(d.zmeny.length<=1){ alert('Každý deň musí mať aspoň 1 zmenu.'); return; }
+  d.zmeny = d.zmeny.filter(z=>z.id!==zmenaId);
+  renderDays();
+}
+
+function updateZmena(dayId, zmenaId, field, val){
+  const d = days.find(d=>d.id===dayId);
+  const z = d?.zmeny.find(z=>z.id===zmenaId);
+  if(z){ z[field]=val; renderDays(); }
+}
+
+function updateCount(dayId, zmenaId, typeKey, val){
+  const d = days.find(d=>d.id===dayId);
+  const z = d?.zmeny.find(z=>z.id===zmenaId);
+  if(z){ z.counts[typeKey]=parseInt(val)||0; renderDays(); }
+}
+
+// ═══════════════════════════════════════════
+// RESULTS
+// ═══════════════════════════════════════════
+function calcAll(){
+  // Returns {rows, totals}
+  const rows = [];
+  let totalNakladEUR=0, totalHodiny=0, totalLudia=0;
+
+  days.forEach(day=>{
+    const info = getDateInfo(day.date);
+    day.zmeny.forEach(z=>{
+      const hours = calcHours(z.od, z.do);
+      const night = isNightShift(z.od, z.do);
+      if(hours<=0) return;
+
+      TYPES.forEach(type=>{
+        const cnt = z.counts[type.key]||0;
+        if(cnt<=0) return;
+        const cista = getSadzba(type, info.isSpecial, night);
+        const nakl  = calcNakladova(cista, type);
+        const nakladEUR = nakl * hours * cnt;
+        rows.push({
+          dayId:day.id, date:day.date, dayLabel:info.label,
+          isSpecial:info.isSpecial, night,
+          zmenaId:z.id, od:z.od, do:z.do, hours,
+          type, cnt, cista, nakl, nakladEUR
+        });
+        totalNakladEUR += nakladEUR;
+        totalHodiny    += hours * cnt;
+        totalLudia     += cnt;
+      });
+    });
+  });
+
+  const naklHodinovka = totalHodiny>0 ? totalNakladEUR/totalHodiny : 0;
+  return {rows, totalNakladEUR, totalHodiny, totalLudia, naklHodinovka};
+}
+
+function renderResults(){
+  const panel = document.getElementById('resultsContent');
+  const {rows, totalNakladEUR, totalHodiny, totalLudia, naklHodinovka} = calcAll();
+
+  if(rows.length===0){
+    panel.innerHTML='<div class="empty"><span>📊</span>Pridajte dni a zmeny v záložke Harmonogram.<br>Výsledky sa zobrazia automaticky.</div>';
+    return;
+  }
+
+  const projName = document.getElementById('projName')?.value||'—';
+  const projClient = document.getElementById('projClient')?.value||'—';
+
+  // Group rows by day
+  const byDay = {};
+  rows.forEach(r=>{
+    if(!byDay[r.dayId]) byDay[r.dayId]={label:r.dayLabel,date:r.date,isSpecial:r.isSpecial,zmeny:{}};
+    const zk = r.zmenaId;
+    if(!byDay[r.dayId].zmeny[zk]) byDay[r.dayId].zmeny[zk]={od:r.od,do:r.do,night:r.night,rows:[]};
+    byDay[r.dayId].zmeny[zk].rows.push(r);
+  });
+
+  let tableRows = '';
+  Object.values(byDay).forEach(day=>{
+    const dayNaklad = Object.values(day.zmeny).flatMap(z=>z.rows).reduce((s,r)=>s+r.nakladEUR,0);
+    const dayHod    = Object.values(day.zmeny).flatMap(z=>z.rows).reduce((s,r)=>s+r.hours*r.cnt,0);
+    const dayPeople = [...new Set(Object.values(day.zmeny).flatMap(z=>z.rows.map(r=>r.cnt)))].reduce((a,b)=>a+b,0);
+
+    tableRows += `<div class="rtr-day">
+      <span style="color:var(--text)">${day.label}</span>
+      ${day.isSpecial?'<span class="badge" style="background:rgba(240,192,64,.12);color:var(--c2)">Víkend/sviatok</span>':''}
+      <span style="margin-left:auto">${fmt(dayNaklad)} €</span>
+    </div>`;
+
+    Object.values(day.zmeny).forEach(zmena=>{
+      zmena.rows.forEach(r=>{
+        tableRows += `<div class="rtr">
+          <span>
+            <span class="row-tag ${r.type.bg}">${r.type.tag}</span>
+            ${r.type.label}
+            ${r.night?'<span style="color:var(--c2);font-size:9px"> 🌙</span>':''}
+          </span>
+          <span class="r-right r-muted">${r.od}–${r.do}</span>
+          <span class="r-right r-muted">${fmt(r.hours,1)} hod</span>
+          <span class="r-right" style="color:var(--muted)">${r.cnt}×</span>
+          <span class="r-right ${r.type.col}">${fmt(r.nakl,4)} €</span>
+          <span class="r-right" style="color:var(--text);font-weight:600">${fmt(r.nakladEUR)} €</span>
+        </div>`;
+      });
+    });
+  });
+
+  panel.innerHTML = `
+    <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+      <div style="font-size:20px;font-weight:800">${projName}</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">${projClient}</div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Celkový náklad projektu</div>
+        <div class="kpi-val c1">${fmt(totalNakladEUR)} €</div>
+        <div class="kpi-sub">vrátane odvodov zamestnávateľa</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Vážená nákladová hodinovka</div>
+        <div class="kpi-val" style="color:var(--text)">${fmt(naklHodinovka,4)} €</div>
+        <div class="kpi-sub">€/hod · priemer všetkých typov</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Celkové hodiny / zmeny</div>
+        <div class="kpi-val" style="color:var(--muted)">${fmt(totalHodiny,1)}</div>
+        <div class="kpi-sub">osobohodín · ${days.length} dní</div>
+      </div>
+    </div>
+
+    <div class="sec">Rozpis po dňoch a zmenách</div>
+
+    <div class="rtable">
+      <div class="rth">
+        <span>Typ brigádnika</span>
+        <span class="r-right">Čas</span>
+        <span class="r-right">Hodín</span>
+        <span class="r-right">Počet</span>
+        <span class="r-right">€/hod</span>
+        <span class="r-right">Náklad</span>
+      </div>
+      ${tableRows}
+      <div class="rtotal">
+        <span>CELKOVÝ NÁKLAD</span>
+        <span></span>
+        <span class="r-right r-muted">${fmt(totalHodiny,1)} hod</span>
+        <span></span>
+        <span class="r-right r-muted">${fmt(naklHodinovka,4)} €</span>
+        <span class="r-right c1">${fmt(totalNakladEUR)} €</span>
+      </div>
+    </div>
+
+    <button class="export-btn" onclick="exportCSV()">⬇ Kopírovať pre Excel (CSV)</button>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════
+function exportCSV(){
+  const {rows} = calcAll();
+  const projName = document.getElementById('projName')?.value||'';
+  const projClient = document.getElementById('projClient')?.value||'';
+  let csv = `Projekt;${projName}\nKlient;${projClient}\n\n`;
+  csv += 'Dátum;Deň;Čas od;Čas do;Hodín;Typ;Počet;€/hod (čistá);€/hod (nákladová);Náklad €\n';
+  rows.forEach(r=>{
+    csv += [
+      r.date, r.dayLabel, r.od, r.do,
+      fmt(r.hours,2), r.type.label, r.cnt,
+      fmt(r.cista,4), fmt(r.nakl,4), fmt(r.nakladEUR,2)
+    ].join(';')+'\n';
+  });
+
+  navigator.clipboard.writeText(csv).then(()=>{
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2200);
+  }).catch(()=>{ alert('Kopírovanie zlyhalo. Skúste iný prehliadač.'); });
+}
+
+// ═══════════════════════════════════════════
+// SAVE / LOAD / AUTOSAVE
+// ═══════════════════════════════════════════
+const LS_KEY = 'nk_v3_state';
+let saveTimeout = null;
+
+function getState(){
+  return {
+    version: '3.1',
+    savedAt: new Date().toISOString(),
+    projName:  document.getElementById('projName')?.value||'',
+    projClient:document.getElementById('projClient')?.value||'',
+    sadzby:{
+      s1w:nv('s1w'),s1we:nv('s1we'),
+      s2w:nv('s2w'),s2we:nv('s2we'),
+      s3w:nv('s3w'),s3we:nv('s3we'),
+      s4w:nv('s4w'),s4we:nv('s4we'),
+      s5:nv('s5'), s6:nv('s6'),
+      sNight:nv('sNight')
+    },
+    days, dayCounter, zmenaCounter
+  };
+}
+
+function applyState(state){
+  if(!state) return;
+  // projekt info
+  const pn = document.getElementById('projName');
+  const pc = document.getElementById('projClient');
+  if(pn) pn.value = state.projName||'';
+  if(pc) pc.value = state.projClient||'';
+  // sadzby
+  if(state.sadzby){
+    Object.entries(state.sadzby).forEach(([k,v])=>{
+      const el = document.getElementById(k);
+      if(el) el.value = v;
+    });
+  }
+  // harmonogram
+  days = state.days||[];
+  dayCounter = state.dayCounter||days.length;
+  zmenaCounter = state.zmenaCounter||0;
+  renderDays();
+  setSaveIndicator('saved', state.savedAt);
+}
+
+function setSaveIndicator(status, ts){
+  const dot = document.getElementById('saveDot');
+  const lbl = document.getElementById('saveLabel');
+  if(!dot||!lbl) return;
+  dot.className = 'save-dot';
+  if(status==='saving'){
+    dot.classList.add('saving');
+    lbl.textContent = 'Ukladám…';
+  } else if(status==='saved'){
+    dot.classList.add('saved');
+    const t = ts ? new Date(ts) : new Date();
+    const time = t.getHours().toString().padStart(2,'0')+':'+t.getMinutes().toString().padStart(2,'0');
+    lbl.textContent = `Uložené ${time}`;
+  } else {
+    lbl.textContent = 'Neuložené';
+  }
+}
+
+function autoSave(){
+  setSaveIndicator('saving');
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(()=>{
+    try{
+      const state = getState();
+      localStorage.setItem(LS_KEY, JSON.stringify(state));
+      setSaveIndicator('saved', state.savedAt);
+    } catch(e){
+      setSaveIndicator('unsaved');
+    }
+  }, 800);
+}
+
+// Patch renderDays to trigger autosave
+const _origRenderDays = renderDays;
+// We'll call autoSave from within renderDays via a wrapper below
+
+function saveToFile(){
+  const state = getState();
+  const projSlug = (state.projName||'projekt').replace(/[^a-zA-Z0-9_\-]/g,'_').slice(0,30);
+  const date = new Date().toISOString().slice(0,10);
+  const filename = `NK_${projSlug}_${date}.json`;
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+  showToast(`Uložené ako ${filename}`);
+}
+
+function loadFromFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const state = JSON.parse(ev.target.result);
+      if(!state.days) throw new Error('Neplatný súbor');
+      applyState(state);
+      showToast(`Načítané: ${state.projName||file.name}`);
+    } catch(err){
+      alert('Chyba pri načítavaní súboru. Uistite sa, že ide o správny NK projekt.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value=''; // reset so same file can be loaded again
+}
+
+function newProject(){
+  if(days.length>0 && !confirm('Naozaj chcete začať nový projekt? Neuložené zmeny sa stratia.')) return;
+  days=[];dayCounter=0;zmenaCounter=0;
+  document.getElementById('projName').value='';
+  document.getElementById('projClient').value='';
+  localStorage.removeItem(LS_KEY);
+  setSaveIndicator('unsaved');
+  addDay();
+  showToast('Nový projekt vytvorený');
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg+' ✓';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+// ═══════════════════════════════════════════
+// PATCH: autosave on every state change
+// ═══════════════════════════════════════════
+// Override renderDays to also autosave
+
+// ═══════════════════════════════════════════
+// SADZBY LISTENERS
+// ═══════════════════════════════════════════
+['s1w','s1we','s2w','s2we','s3w','s3we','s4w','s4we','s5','s6','sNight'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('input', ()=>{ renderResults(); autoSave(); });
+});
+
+['projName','projClient'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('input', ()=>{ renderResults(); autoSave(); });
+});
+
+// ═══════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+    if(tab.dataset.tab==='vysledky') renderResults();
+  });
+});
+
+document.getElementById('addDayBtn').addEventListener('click', addDay);
+
+// ═══════════════════════════════════════════
+// INIT — načítaj z localStorage alebo pridaj ukážkový deň
+// ═══════════════════════════════════════════
+(function init(){
+  try{
+    const saved = localStorage.getItem(LS_KEY);
+    if(saved){
+      const state = JSON.parse(saved);
+      if(state?.days){
+        applyState(state);
+        return;
+      }
+    }
+  } catch(e){}
+  // nič v LS — štart s prázdnym projektom + 1 deň
+  addDay();
+  setSaveIndicator('unsaved');
+})();
+</script>
+</body>
+</html>
