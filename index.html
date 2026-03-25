@@ -163,9 +163,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .time-input{
   background:var(--s3);border:1px solid var(--border);border-radius:6px;
   color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;
-  padding:5px 8px;outline:none;width:76px;text-align:center;
+  padding:5px 8px;outline:none;width:64px;text-align:center;letter-spacing:.05em;
 }
 .time-input:focus{border-color:var(--border2);}
+.time-input.invalid{border-color:#ff6b6b;}
 .time-sep{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted2);}
 .zmena-info{font-family:'IBM Plex Mono',monospace;font-size:10px;margin-left:4px;}
 .zmena-del{background:none;border:none;color:var(--muted2);cursor:pointer;font-size:13px;
@@ -264,6 +265,36 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 
 .row-tag{display:inline-block;font-size:9px;padding:1px 6px;border-radius:12px;font-weight:600;margin-right:4px;}
 
+/* ── OOP TRACKING ── */
+.oop-box{
+  background:rgba(110,232,154,.05);border:1px solid rgba(110,232,154,.15);
+  border-radius:8px;padding:12px 16px;margin-bottom:14px;
+}
+.oop-box-warn{
+  background:rgba(240,192,64,.06);border:1px solid rgba(240,192,64,.2);
+  border-radius:8px;padding:12px 16px;margin-bottom:14px;
+}
+.oop-title{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--acc);
+  letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
+.oop-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;}
+.oop-bar-wrap{flex:1;height:4px;background:var(--s3);border-radius:2px;overflow:hidden;}
+.oop-bar{height:100%;border-radius:2px;transition:width .3s;}
+.oop-bar.ok{background:var(--c1);}
+.oop-bar.over{background:var(--c2);}
+.new-badge{font-size:9px;padding:1px 6px;border-radius:10px;
+  background:rgba(77,184,255,.12);color:var(--c4);margin-left:4px;}
+
+/* noví field v zmene */
+.count-new{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--c4);
+  margin-top:3px;display:flex;align-items:center;gap:4px;}
+.count-new input{
+  background:var(--s3);border:1px solid rgba(77,184,255,.2);border-radius:4px;
+  color:var(--c4);font-family:'IBM Plex Mono',monospace;font-size:11px;
+  padding:3px 6px;width:50px;text-align:center;outline:none;
+}
+.count-new input:focus{border-color:var(--c4);}
+
 /* ── PASSWORD SCREEN ── */
 #pwScreen{
   position:fixed;inset:0;background:var(--bg);z-index:9999;
@@ -335,7 +366,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 <div class="panel active" id="tab-harmonogram">
 
   <!-- Projekt info -->
-  <div class="proj-row" style="margin-bottom:20px;">
+  <div class="proj-row" style="margin-bottom:16px;">
     <div class="proj-field">
       <label>Názov projektu</label>
       <input type="text" id="projName" placeholder="napr. Instore akcia XY" class="left">
@@ -343,6 +374,27 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
     <div class="proj-field" style="max-width:200px;">
       <label>Klient</label>
       <input type="text" id="projClient" placeholder="napr. ABC s.r.o." class="left">
+    </div>
+  </div>
+
+  <!-- OOP nastavenia -->
+  <div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--acc);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">
+      OOP sledovanie · Študent s OOP
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);flex:1;min-width:200px;">
+        Default % stálych brigádnikov (rovnakí ľudia každý deň) — môžete upraviť per-deň v poli "z toho noví"
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)">Stáli default:</span>
+        <input class="ni" type="number" id="oopDefaultPct" value="100" min="0" max="100" step="5" style="width:70px">
+        <span class="unit">%</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)">OOP limit:</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--c1)">200 €/mes</span>
+      </div>
     </div>
   </div>
 
@@ -422,11 +474,34 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   </div>
 
   <div class="notebox" style="margin-top:20px;">
-    <span class="hi">Odvody 2026:</span><br>
-    <span class="hi">Študent OOP:</span> odmena ≤200€/mes → zamestnanec 0%, zamestnávateľ 1,05%. Zdravotné = 0 (štát).<br>
-    <span class="hi">Študent bez OOP:</span> zamestnanec 7% (dôchodkové), zamestnávateľ 22,80%. Zdravotné = 0.<br>
-    <span class="hi">DoPČ:</span> zamestnanec 13,4% (soc.9,4%+zdr.4%), zamestnávateľ 36,2% (soc.25,2%+zdr.11%). Čistá → hrubá → nákladová.<br>
-    <span class="hi">SZČO / Fakturanti:</span> odvody si platia sami. Fixná sadzba = priamy náklad.
+    <span class="hi">Odvody 2026 — Výpočet nákladovej hodinovky:</span><br><br>
+
+    <span class="hi">🟢 Študent OOP (odmena ≤ 200 €/mes):</span><br>
+    &nbsp;&nbsp;Zamestnanec: 0 % &nbsp;|&nbsp; Zamestnávateľ: 1,05 % (úrazové 0,80 % + garančné 0,25 %)<br>
+    &nbsp;&nbsp;Zdravotné: 0 % — platí štát &nbsp;|&nbsp; Vzorec: <em>čistá × 1,0105 = nákladová</em><br><br>
+
+    <span class="hi">🟡 Študent OOP (odmena &gt; 200 €/mes) — po prestreleí OOP limitu:</span><br>
+    &nbsp;&nbsp;Zamestnanec: 7 % (dôchodkové) &nbsp;|&nbsp; Zamestnávateľ: 22,80 % + 1,05 % = 23,85 %<br>
+    &nbsp;&nbsp;Platí len zo sumy NAD 200 € &nbsp;|&nbsp; Vzorec: <em>hrubá = čistá / 0,93 → nákladová = hrubá × 1,2385</em><br><br>
+
+    <span class="hi">🟡 Študent bez OOP:</span><br>
+    &nbsp;&nbsp;Zamestnanec: 7 % &nbsp;|&nbsp; Zamestnávateľ: 22,80 % &nbsp;|&nbsp; Zdravotné: 0 %<br>
+    &nbsp;&nbsp;Vzorec: <em>hrubá = čistá / 0,93 → nákladová = hrubá × 1,228</em><br><br>
+
+    <span class="hi">🟠 Zamestnaný / Nezamestnaný (DoPČ):</span><br>
+    &nbsp;&nbsp;Zamestnanec: 9,4 % soc. + 4 % zdr. = 13,4 % &nbsp;|&nbsp; Zamestnávateľ: 25,2 % soc. + 11 % zdr. = 36,2 %<br>
+    &nbsp;&nbsp;Vzorec: <em>hrubá = čistá / 0,866 → nákladová = hrubá × 1,362</em><br><br>
+
+    <span class="hi">🔵 Fakturant brigádnik / 🟣 Fakturant dodávateľ (SZČO):</span><br>
+    &nbsp;&nbsp;Odvody si platia sami &nbsp;|&nbsp; Zamestnávateľ: 0 % &nbsp;|&nbsp; Fixná fakturovaná sadzba = priamy náklad<br>
+    &nbsp;&nbsp;Nočný príplatok sa nepripočítava (fixná sadzba)<br><br>
+
+    <span class="hi">🌙 Nočný príplatok (22:00 – 06:00):</span><br>
+    &nbsp;&nbsp;Pripočítava sa k základnej sadzbe pred výpočtom odvodov. Platí pre všetkých okrem fakturantov.<br><br>
+
+    <span class="hi">📊 Vážená nákladová hodinovka:</span><br>
+    &nbsp;&nbsp;= Σ(nákladová €/hod × hodiny × počet osôb) / Σ(hodiny × počet osôb)<br>
+    &nbsp;&nbsp;Váha každého typu = osobohodiny — viac ľudí alebo viac hodín = väčší vplyv na výsledok.
   </div>
 </div>
 
@@ -569,7 +644,7 @@ function fmt(n,dec=2){ return n.toFixed(dec).replace('.',','); }
 // ═══════════════════════════════════════════
 // RENDER DAYS
 // ═══════════════════════════════════════════
-function makeCounts(){ return {t1:0,t2:0,t3:0,t4:0,t5:0,t6:0}; }
+function makeCounts(){ return {t1:0,t1novi:0,t2:0,t3:0,t4:0,t5:0,t6:0}; }
 
 function renderDays(){
   const el = document.getElementById('daysList');
@@ -625,19 +700,30 @@ function renderZmena(z, zi, dayId, isSpecial){
   <div class="zmena-block" id="zmena-${z.id}">
     <div class="zmena-header">
       <span class="zmena-label">${zmenaLabel}</span>
-      <input class="time-input" type="time" value="${z.od}" onchange="updateZmena('${dayId}','${z.id}','od',this.value)">
+      <input class="time-input" type="text" value="${z.od}" placeholder="08:00"
+        onchange="updateTime('${dayId}','${z.id}','od',this.value,this)"
+        onblur="formatTime(this)" maxlength="5">
       <span class="time-sep">→</span>
-      <input class="time-input" type="time" value="${z.do}" onchange="updateZmena('${dayId}','${z.id}','do',this.value)">
+      <input class="time-input" type="text" value="${z.do}" placeholder="20:00"
+        onchange="updateTime('${dayId}','${z.id}','do',this.value,this)"
+        onblur="formatTime(this)" maxlength="5">
       <span class="zmena-info r-muted">${hoursLabel}${nightLabel}${specialLabel}</span>
       <button class="zmena-del" onclick="deleteZmena('${dayId}','${z.id}')">✕</button>
     </div>
     <div class="zmena-counts">
       ${TYPES.map(t=>`
         <div class="count-field">
-          <label><span class="dot" style="background:var(--${t.col.replace('c','c')});width:6px;height:6px;border-radius:50%;display:inline-block;"></span>
+          <label><span class="dot" style="background:var(--${t.col});width:6px;height:6px;border-radius:50%;display:inline-block;"></span>
             <span class="${t.col}">${t.label}</span></label>
           <input class="count-input" type="number" min="0" step="1" value="${z.counts[t.key]||0}"
             onchange="updateCount('${dayId}','${z.id}','${t.key}',this.value)">
+          ${t.key==='t1' ? `
+          <div class="count-new">
+            <span>z toho noví:</span>
+            <input type="number" min="0" step="1" value="${z.counts.t1novi||0}"
+              onchange="updateCount('${dayId}','${z.id}','t1novi',this.value)"
+              title="Koľko je nových brigádnikov (prvýkrát na projekte)">
+          </div>` : ''}
         </div>
       `).join('')}
     </div>
@@ -646,6 +732,30 @@ function renderZmena(z, zi, dayId, isSpecial){
 
 function attachDayListeners(){
   // nothing extra needed — all via inline handlers
+}
+
+function formatTime(el){
+  // Normalize input to HH:MM
+  let v = el.value.trim().replace(/[^0-9:]/g,'');
+  if(!v){ el.classList.add('invalid'); return; }
+  // Accept formats: 8, 800, 8:00, 08:00, 820, 8:20
+  if(!v.includes(':')) {
+    if(v.length<=2) v = v.padStart(2,'0')+':00';
+    else if(v.length===3) v = '0'+v[0]+':'+v.slice(1);
+    else if(v.length===4) v = v.slice(0,2)+':'+v.slice(2);
+  }
+  const parts = v.split(':');
+  const h = parseInt(parts[0])||0;
+  const m = parseInt(parts[1])||0;
+  if(h<0||h>23||m<0||m>59){ el.classList.add('invalid'); return; }
+  el.classList.remove('invalid');
+  el.value = String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+}
+
+function updateTime(dayId, zmenaId, field, val, el){
+  formatTime(el);
+  if(el.classList.contains('invalid')) return;
+  updateZmena(dayId, zmenaId, field, el.value);
 }
 
 // ═══════════════════════════════════════════
@@ -722,43 +832,223 @@ function updateCount(dayId, zmenaId, typeKey, val){
 // RESULTS
 // ═══════════════════════════════════════════
 function calcAll(){
-  // Returns {rows, totals}
-  const rows = [];
-  let totalNakladEUR=0, totalHodiny=0, totalLudia=0;
+  const OOP_LIMIT = 200;
+  const oopDefaultPct = (nv('oopDefaultPct')||80) / 100;
+  const t1 = TYPES[0]; // Študent OOP
 
-  days.forEach(day=>{
+  // ── Krok 1: Zisti koľko unikátnych stálych brigádnikov je na projekte
+  // Pre každý deň: stáli = celkom - noví (alebo celkom * defaultPct ak noví nie sú zadané)
+  // Kumulujeme odmenu stálym brigádnikom deň po deň
+
+  // Najprv nájdeme max počet stálych (základ = 1. deň)
+  // Každý ďalší deň: stáli = min(predchádzajúci stáli, dnešný celkom - noví)
+
+  // Budujeme timeline stálych brigádnikov t1
+  let staliBrigadnici = null; // počet unikátnych stálych
+  const dayOopData = []; // per-day OOP info
+
+  days.forEach((day, di) => {
+    let t1celkom = 0;
+    let t1novi = 0;
+    day.zmeny.forEach(z => {
+      t1celkom += z.counts.t1 || 0;
+      t1novi   += z.counts.t1novi || 0;
+    });
+
+    // Ak noví nie sú zadané, použij default %
+    const noviAkt = (t1novi > 0 || t1celkom === 0)
+      ? t1novi
+      : Math.round(t1celkom * (1 - oopDefaultPct));
+
+    const staliDnes = Math.max(0, t1celkom - noviAkt);
+
+    if(staliBrigadnici === null) staliBrigadnici = staliDnes;
+    else staliBrigadnici = Math.min(staliBrigadnici, staliDnes);
+
+    dayOopData.push({ t1celkom, noviAkt, staliDnes });
+  });
+
+  staliBrigadnici = staliBrigadnici || 0;
+
+  // ── Krok 2: Kumulatívne hodiny a odmena pre stálych brigádnikov
+  let kumulOdmena = 0; // kumulatívna odmena stálych brigádnikov
+  const dayKumulOdmena = []; // odmena na konci každého dňa
+
+  days.forEach((day, di) => {
     const info = getDateInfo(day.date);
-    day.zmeny.forEach(z=>{
+    let dennaOdmena = 0;
+    day.zmeny.forEach(z => {
       const hours = calcHours(z.od, z.do);
       const night = isNightShift(z.od, z.do);
-      if(hours<=0) return;
+      if(hours <= 0) return;
+      const cista = getSadzba(t1, info.isSpecial, night);
+      dennaOdmena += cista * hours;
+    });
+    kumulOdmena += dennaOdmena;
+    dayKumulOdmena.push(kumulOdmena);
+  });
 
-      TYPES.forEach(type=>{
-        const cnt = z.counts[type.key]||0;
-        if(cnt<=0) return;
+  // ── Krok 3: Zisti od ktorého dňa stáli prestrelia 200€
+  // Nájdi prechod cez limit
+  let oopPrelomDen = -1; // index dňa kde sa prekročí limit
+  let oopPrelomOdmena = 0; // odmena v momente prekročenia
+  for(let i = 0; i < dayKumulOdmena.length; i++){
+    if(dayKumulOdmena[i] > OOP_LIMIT && oopPrelomDen === -1){
+      oopPrelomDen = i;
+      oopPrelomOdmena = dayKumulOdmena[i];
+    }
+  }
+
+  // ── Krok 4: Vypočítaj rows s OOP-korigovanými odvodmi
+  const rows = [];
+  let totalNakladEUR = 0, totalHodiny = 0;
+  let oopDoplatok = 0; // extra náklad kvôli prestrelenej OOP
+  let oopPocetBrigadnikov = 0; // počet stálych čo prestrelia
+
+  days.forEach((day, di) => {
+    const info = getDateInfo(day.date);
+    const prevKumul = di > 0 ? dayKumulOdmena[di-1] : 0;
+    const currKumul = dayKumulOdmena[di];
+    const oopData = dayOopData[di];
+
+    day.zmeny.forEach(z => {
+      const hours = calcHours(z.od, z.do);
+      const night = isNightShift(z.od, z.do);
+      if(hours <= 0) return;
+
+      TYPES.forEach((type, ti) => {
+        let cnt = z.counts[type.key] || 0;
+        if(cnt <= 0) return;
         const cista = getSadzba(type, info.isSpecial, night);
-        const nakl  = calcNakladova(cista, type);
-        const nakladEUR = nakl * hours * cnt;
-        rows.push({
-          dayId:day.id, date:day.date, dayLabel:info.label,
-          isSpecial:info.isSpecial, night,
-          zmenaId:z.id, od:z.od, do:z.do, hours,
-          type, cnt, cista, nakl, nakladEUR
-        });
-        totalNakladEUR += nakladEUR;
-        totalHodiny    += hours * cnt;
-        totalLudia     += cnt;
+
+        if(type.key === 't1' && staliBrigadnici > 0){
+          // Rozdeľ na stálych a nových
+          const noviVZmene = Math.min(Math.round(oopData.noviAkt * (z.counts.t1 / (oopData.t1celkom||1))), cnt);
+          const staliVZmene = Math.max(0, cnt - noviVZmene);
+
+          // NOVÍ — vždy pod OOP limitom (začínajú od nuly)
+          if(noviVZmene > 0){
+            const nakl = calcNakladova(cista, type); // 1,05%
+            const nakladEUR = nakl * hours * noviVZmene;
+            rows.push({
+              dayId:day.id, date:day.date, dayLabel:info.label,
+              isSpecial:info.isSpecial, night,
+              zmenaId:z.id, od:z.od, do:z.do, hours,
+              type, cnt:noviVZmene, cista, nakl, nakladEUR,
+              oop:'novy'
+            });
+            totalNakladEUR += nakladEUR;
+            totalHodiny += hours * noviVZmene;
+          }
+
+          // STÁLI — skontroluj či prestrieľajú OOP
+          if(staliVZmene > 0){
+            // Aká časť tohto dňa je pod/nad limitom?
+            if(currKumul <= OOP_LIMIT){
+              // Celý deň pod limitom
+              const nakl = calcNakladova(cista, type); // 1,05%
+              const nakladEUR = nakl * hours * staliVZmene;
+              rows.push({
+                dayId:day.id, date:day.date, dayLabel:info.label,
+                isSpecial:info.isSpecial, night,
+                zmenaId:z.id, od:z.od, do:z.do, hours,
+                type, cnt:staliVZmene, cista, nakl, nakladEUR,
+                oop:'pod'
+              });
+              totalNakladEUR += nakladEUR;
+              totalHodiny += hours * staliVZmene;
+            } else if(prevKumul >= OOP_LIMIT){
+              // Celý deň nad limitom — odvody z plnej sumy
+              const hruba = cista / (1 - 0.07);
+              const naklNad = hruba * (1 + 0.228 + 0.0105);
+              const nakladEUR = naklNad * hours * staliVZmene;
+              // Extra vs štandard 1,05%
+              const standardNakl = cista * 1.0105;
+              const extra = (naklNad - standardNakl) * hours * staliVZmene;
+              rows.push({
+                dayId:day.id, date:day.date, dayLabel:info.label,
+                isSpecial:info.isSpecial, night,
+                zmenaId:z.id, od:z.od, do:z.do, hours,
+                type, cnt:staliVZmene, cista, nakl:naklNad, nakladEUR,
+                oop:'nad', extra
+              });
+              totalNakladEUR += nakladEUR;
+              totalHodiny += hours * staliVZmene;
+              oopDoplatok += extra;
+            } else {
+              // Prechodný deň — časť pod, časť nad
+              // Koľko odmeny chýba do 200€?
+              const chybaDoLimitu = OOP_LIMIT - prevKumul;
+              const dennaSadzba = (currKumul - prevKumul) / (hours || 1);
+              const hodinyPod = dennaSadzba > 0 ? Math.min(hours, chybaDoLimitu / dennaSadzba) : hours;
+              const hodinyNad = Math.max(0, hours - hodinyPod);
+
+              // Pod limitom
+              if(hodinyPod > 0){
+                const nakl = calcNakladova(cista, type);
+                const nakladEUR = nakl * hodinyPod * staliVZmene;
+                rows.push({
+                  dayId:day.id, date:day.date, dayLabel:info.label,
+                  isSpecial:info.isSpecial, night,
+                  zmenaId:z.id, od:z.od, do:z.do, hours:hodinyPod,
+                  type, cnt:staliVZmene, cista, nakl, nakladEUR,
+                  oop:'pod'
+                });
+                totalNakladEUR += nakladEUR;
+                totalHodiny += hodinyPod * staliVZmene;
+              }
+
+              // Nad limitom
+              if(hodinyNad > 0){
+                const hruba = cista / (1 - 0.07);
+                const naklNad = hruba * (1 + 0.228 + 0.0105);
+                const nakladEUR = naklNad * hodinyNad * staliVZmene;
+                const extra = (naklNad - cista * 1.0105) * hodinyNad * staliVZmene;
+                rows.push({
+                  dayId:day.id, date:day.date, dayLabel:info.label,
+                  isSpecial:info.isSpecial, night,
+                  zmenaId:z.id, od:z.od, do:z.do, hours:hodinyNad,
+                  type, cnt:staliVZmene, cista, nakl:naklNad, nakladEUR,
+                  oop:'nad', extra
+                });
+                totalNakladEUR += nakladEUR;
+                totalHodiny += hodinyNad * staliVZmene;
+                oopDoplatok += extra;
+              }
+            }
+          }
+        } else {
+          // Ostatné typy — štandardný výpočet
+          const nakl = calcNakladova(cista, type);
+          const nakladEUR = nakl * hours * cnt;
+          rows.push({
+            dayId:day.id, date:day.date, dayLabel:info.label,
+            isSpecial:info.isSpecial, night,
+            zmenaId:z.id, od:z.od, do:z.do, hours,
+            type, cnt, cista, nakl, nakladEUR, oop:null
+          });
+          totalNakladEUR += nakladEUR;
+          totalHodiny += hours * cnt;
+        }
       });
     });
   });
 
-  const naklHodinovka = totalHodiny>0 ? totalNakladEUR/totalHodiny : 0;
-  return {rows, totalNakladEUR, totalHodiny, totalLudia, naklHodinovka};
+  oopPocetBrigadnikov = oopPrelomDen >= 0 ? staliBrigadnici : 0;
+  const naklHodinovka = totalHodiny > 0 ? totalNakladEUR / totalHodiny : 0;
+
+  return {
+    rows, totalNakladEUR, totalHodiny, naklHodinovka,
+    oopDoplatok, oopPocetBrigadnikov, staliBrigadnici,
+    oopPrelomDen, dayKumulOdmena
+  };
 }
 
 function renderResults(){
   const panel = document.getElementById('resultsContent');
-  const {rows, totalNakladEUR, totalHodiny, totalLudia, naklHodinovka} = calcAll();
+  const {rows, totalNakladEUR, totalHodiny, naklHodinovka,
+         oopDoplatok, oopPocetBrigadnikov, staliBrigadnici,
+         oopPrelomDen, dayKumulOdmena} = calcAll();
 
   if(rows.length===0){
     panel.innerHTML='<div class="empty"><span>📊</span>Pridajte dni a zmeny v záložke Harmonogram.<br>Výsledky sa zobrazia automaticky.</div>';
@@ -767,6 +1057,56 @@ function renderResults(){
 
   const projName = document.getElementById('projName')?.value||'—';
   const projClient = document.getElementById('projClient')?.value||'—';
+
+  // OOP blok — súhrn
+  const lastKumul = dayKumulOdmena[dayKumulOdmena.length-1] || 0;
+  const oopHtml = staliBrigadnici > 0 ? `
+    <div class="${oopDoplatok > 0 ? 'oop-box-warn' : 'oop-box'}" style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+        <div class="oop-title" style="margin-bottom:0">${oopDoplatok > 0 ? '⚠ OOP limit prekročený' : '✓ OOP v limite'} · Študent s OOP</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px;">
+        <div style="background:var(--s3);border-radius:8px;padding:12px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px;">STÁLI BRIGÁDNICI</div>
+          <div style="font-size:20px;font-weight:800;color:var(--c1)">${staliBrigadnici}</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted2)">unikátnych osôb</div>
+        </div>
+        <div style="background:var(--s3);border-radius:8px;padding:12px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px;">KUMULATÍVNA ODMENA</div>
+          <div style="font-size:20px;font-weight:800;color:${lastKumul>200?'var(--c2)':'var(--c1)'}">${fmt(lastKumul)} €</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted2)">na stáleho brigádnika</div>
+        </div>
+        <div style="background:${oopDoplatok>0?'rgba(240,192,64,.08)':'var(--s3)'};border:1px solid ${oopDoplatok>0?'rgba(240,192,64,.2)':'transparent'};border-radius:8px;padding:12px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px;">EXTRA ODVODY NAD LIMIT</div>
+          <div style="font-size:20px;font-weight:800;color:${oopDoplatok>0?'var(--c2)':'var(--c1)'}">${oopDoplatok>0?'+'+fmt(oopDoplatok)+' €':'0,00 €'}</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted2)">${oopDoplatok>0?'zahrnuté v celkovom náklade':'všetci pod limitom'}</div>
+        </div>
+        ${oopDoplatok > 0 ? `
+        <div style="background:rgba(240,192,64,.08);border:1px solid rgba(240,192,64,.2);border-radius:8px;padding:12px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px;">LIMIT PRESTRELEÝ OD</div>
+          <div style="font-size:20px;font-weight:800;color:var(--c2)">D${oopPrelomDen+1}</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted2)">${days[oopPrelomDen]?.date||''}</div>
+        </div>` : `
+        <div style="background:var(--s3);border-radius:8px;padding:12px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px;">ZOSTATOK DO LIMITU</div>
+          <div style="font-size:20px;font-weight:800;color:var(--c1)">+${fmt(200-lastKumul)} €</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted2)">do 200 € OOP hranice</div>
+        </div>`}
+      </div>
+
+      <!-- Progress bar -->
+      <div>
+        <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:5px;">
+          <span>Vyčerpanie OOP limitu (stáli brigádnici)</span>
+          <span>${fmt(lastKumul)} € / 200,00 €</span>
+        </div>
+        <div style="height:5px;background:var(--s3);border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${Math.min(100,(lastKumul/200)*100).toFixed(1)}%;background:${lastKumul>200?'var(--c2)':'var(--c1)'};border-radius:3px;"></div>
+        </div>
+      </div>
+    </div>` : '';
+
 
   // Group rows by day
   const byDay = {};
@@ -780,9 +1120,6 @@ function renderResults(){
   let tableRows = '';
   Object.values(byDay).forEach(day=>{
     const dayNaklad = Object.values(day.zmeny).flatMap(z=>z.rows).reduce((s,r)=>s+r.nakladEUR,0);
-    const dayHod    = Object.values(day.zmeny).flatMap(z=>z.rows).reduce((s,r)=>s+r.hours*r.cnt,0);
-    const dayPeople = [...new Set(Object.values(day.zmeny).flatMap(z=>z.rows.map(r=>r.cnt)))].reduce((a,b)=>a+b,0);
-
     tableRows += `<div class="rtr-day">
       <span style="color:var(--text)">${day.label}</span>
       ${day.isSpecial?'<span class="badge" style="background:rgba(240,192,64,.12);color:var(--c2)">Víkend/sviatok</span>':''}
@@ -791,10 +1128,13 @@ function renderResults(){
 
     Object.values(day.zmeny).forEach(zmena=>{
       zmena.rows.forEach(r=>{
+        const oopTag = r.oop==='nad'
+          ? '<span style="font-size:9px;color:var(--c2);margin-left:4px">⚠ nad OOP</span>'
+          : r.oop==='novy' ? '<span style="font-size:9px;color:var(--c4);margin-left:4px">noví</span>' : '';
         tableRows += `<div class="rtr">
           <span>
             <span class="row-tag ${r.type.bg}">${r.type.tag}</span>
-            ${r.type.label}
+            ${r.type.label}${oopTag}
             ${r.night?'<span style="color:var(--c2);font-size:9px"> 🌙</span>':''}
           </span>
           <span class="r-right r-muted">${r.od}–${r.do}</span>
@@ -817,19 +1157,21 @@ function renderResults(){
       <div class="kpi">
         <div class="kpi-label">Celkový náklad projektu</div>
         <div class="kpi-val c1">${fmt(totalNakladEUR)} €</div>
-        <div class="kpi-sub">vrátane odvodov zamestnávateľa</div>
+        <div class="kpi-sub">vrátane odvodov + OOP korekcie</div>
       </div>
       <div class="kpi">
         <div class="kpi-label">Vážená nákladová hodinovka</div>
         <div class="kpi-val" style="color:var(--text)">${fmt(naklHodinovka,4)} €</div>
-        <div class="kpi-sub">€/hod · priemer všetkých typov</div>
+        <div class="kpi-sub">€/hod · OOP korektne zahrnuté</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">Celkové hodiny / zmeny</div>
+        <div class="kpi-label">Celkové hodiny</div>
         <div class="kpi-val" style="color:var(--muted)">${fmt(totalHodiny,1)}</div>
         <div class="kpi-sub">osobohodín · ${days.length} dní</div>
       </div>
     </div>
+
+    ${oopHtml}
 
     <div class="sec">Rozpis po dňoch a zmenách</div>
 
@@ -884,7 +1226,7 @@ function exportCSV(){
 // ═══════════════════════════════════════════
 // SAVE / LOAD / AUTOSAVE
 // ═══════════════════════════════════════════
-const LS_KEY = 'nk_v3_state';
+const LS_KEY = 'nk_v3_state_v2';
 let saveTimeout = null;
 
 function getState(){
@@ -899,7 +1241,8 @@ function getState(){
       s3w:nv('s3w'),s3we:nv('s3we'),
       s4w:nv('s4w'),s4we:nv('s4we'),
       s5:nv('s5'), s6:nv('s6'),
-      sNight:nv('sNight')
+      sNight:nv('sNight'),
+      oopDefaultPct:nv('oopDefaultPct')
     },
     days, dayCounter, zmenaCounter
   };
@@ -1020,7 +1363,7 @@ function showToast(msg){
 // ═══════════════════════════════════════════
 // SADZBY LISTENERS
 // ═══════════════════════════════════════════
-['s1w','s1we','s2w','s2we','s3w','s3we','s4w','s4we','s5','s6','sNight'].forEach(id=>{
+['s1w','s1we','s2w','s2we','s3w','s3we','s4w','s4we','s5','s6','sNight','oopDefaultPct'].forEach(id=>{
   document.getElementById(id)?.addEventListener('input', ()=>{ renderResults(); autoSave(); });
 });
 
